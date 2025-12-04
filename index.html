@@ -2,278 +2,169 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Spontaneous Motor Tempo (SMT) Counter</title>
+<title>SMT Counter – Fixed Taps</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #f4f8ff;
-        text-align: center;
-        padding: 30px 10px;
-    }
+body {
+    font-family: Arial, sans-serif;
+    background: #eef4ff;
+    padding: 25px;
+    text-align: center;
+}
 
-    h1 {
-        color: #1a3d8f;
-        margin-bottom: 10px;
-    }
+h1 {
+    color: #163f9a;
+}
 
-    p {
-        font-size: 16px;
-        max-width: 800px;
-        margin: 5px auto;
-    }
+#tapButton {
+    background: #4677ff;
+    color: white;
+    border: none;
+    padding: 30px 70px;
+    font-size: 26px;
+    border-radius: 14px;
+    margin-top: 40px;
+    cursor: pointer;
+}
+#tapButton:active {
+    background: #6d90ff;
+}
 
-    #tapButton {
-        background: #4a79ff;
-        color: white;
-        border: none;
-        padding: 25px 60px;
-        font-size: 26px;
-        border-radius: 14px;
-        margin-top: 40px;
-        cursor: pointer;
-    }
+#instructions {
+    max-width: 700px;
+    margin: 0 auto;
+}
 
-    #tapButton:active {
-        background: #6a92ff;
-    }
+#trialInfo {
+    font-size: 20px;
+    margin-top: 20px;
+    font-weight: bold;
+}
 
-    #controls {
-        margin-top: 25px;
-    }
+#tapCountDisplay {
+    margin-top: 15px;
+    font-size: 18px;
+    color: #111;
+}
 
-    .ctrl-btn {
-        background: #ffffff;
-        border: 2px solid #4a79ff;
-        color: #1a3d8f;
-        padding: 10px 25px;
-        font-size: 18px;
-        border-radius: 10px;
-        cursor: pointer;
-        margin: 5px;
-    }
-
-    .ctrl-btn:disabled {
-        border-color: #cccccc;
-        color: #888888;
-        cursor: not-allowed;
-    }
-
-    #timerDisplay {
-        margin-top: 20px;
-        font-size: 20px;
-        font-weight: bold;
-        color: #333333;
-    }
-
-    #resultsBox {
-        margin-top: 40px;
-        font-size: 18px;
-        padding: 20px;
-        background: white;
-        border-radius: 10px;
-        display: none;
-        box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
-        max-width: 800px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    #trialInfo {
-        margin-top: 20px;
-        font-size: 18px;
-        font-weight: bold;
-        color: #1a3d8f;
-    }
+#resultsBox {
+    margin-top: 40px;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    display: none;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
 </style>
 </head>
 
 <body>
 
 <h1>Spontaneous Motor Tempo (SMT) Test</h1>
-<p><b>Instructions:</b> You will complete <b>two tapping trials</b>. In each trial, tap the big blue button at a natural, comfortable pace (not following any song or external beat).</p>
-<p>Each trial lasts for a fixed amount of time. Just tap steadily until the timer ends or you press Stop.</p>
-<p>After both trials, your SMT values (in BPM) and the average will be shown. Please enter the <b>average BPM</b> in the Google Form.</p>
 
-<div id="trialInfo">Current Trial: <span id="currentTrialLabel">1</span> / 2</div>
-<div id="timerDisplay">Time left: <span id="timeLeftLabel">20.0</span> s</div>
-
-<button id="tapButton" disabled>TAP</button>
-
-<div id="controls">
-    <button id="startButton" class="ctrl-btn">Start Trial</button>
-    <button id="stopButton" class="ctrl-btn" disabled>Stop</button>
+<div id="instructions">
+    <p>You will complete <b>two tapping trials</b>.</p>
+    <p>In each trial, tap the button <b>exactly 20 times</b> at a natural, comfortable pace.</p>
+    <p>Do not follow a beat, music, or rhythm — just tap naturally.</p>
 </div>
+
+<div id="trialInfo">Current Trial: <span id="trialNum">1</span> / 2</div>
+<div id="tapCountDisplay">Taps: <span id="tapCount">0</span> / 20</div>
+
+<button id="tapButton">TAP</button>
 
 <div id="resultsBox">
     <h2>Results</h2>
-    <p id="trial1Result"></p>
-    <p id="trial2Result"></p>
-    <p id="averageResult"></p>
-    <p><b>Copy the average BPM value into your Google Form.</b></p>
+    <p id="trial1Out"></p>
+    <p id="trial2Out"></p>
+    <p id="avgOut"></p>
+    <p><b>Copy the average BPM into your Google Form.</b></p>
 </div>
 
 <script>
-// ===== CONFIGURATION =====
-const TRIAL_DURATION_MS = 20000; // 20 seconds. Change this to 15000 for 15s or 30000 for 30s.
+const REQUIRED_TAPS = 20;
 
-// ===== STATE VARIABLES =====
 let currentTrial = 1;
-let isRunning = false;
-let tapTimesTrial1 = [];
-let tapTimesTrial2 = [];
-let trialStartTime = null;
-let countdownTimer = null;
-let trialTimeout = null;
+let tapCount = 0;
+
+let tapsTrial1 = [];
+let tapsTrial2 = [];
 
 const tapButton = document.getElementById("tapButton");
-const startButton = document.getElementById("startButton");
-const stopButton = document.getElementById("stopButton");
-const timerDisplay = document.getElementById("timeLeftLabel");
-const trialLabel = document.getElementById("currentTrialLabel");
+const tapCountDisplay = document.getElementById("tapCount");
+const trialNumDisplay = document.getElementById("trialNum");
 const resultsBox = document.getElementById("resultsBox");
-const trial1Result = document.getElementById("trial1Result");
-const trial2Result = document.getElementById("trial2Result");
-const averageResult = document.getElementById("averageResult");
 
-// ===== EVENT HANDLERS =====
+// Handle tap
 tapButton.addEventListener("click", () => {
-    if (!isRunning) return;
     const now = performance.now();
+
     if (currentTrial === 1) {
-        tapTimesTrial1.push(now);
+        tapsTrial1.push(now);
     } else if (currentTrial === 2) {
-        tapTimesTrial2.push(now);
-    }
-});
-
-startButton.addEventListener("click", () => {
-    if (isRunning) return;
-    if (currentTrial > 2) {
-        alert("Both trials are complete. Please use the results shown.");
-        return;
-    }
-    startTrial();
-});
-
-stopButton.addEventListener("click", () => {
-    if (!isRunning) return;
-    endTrial();
-});
-
-// ===== TRIAL CONTROL FUNCTIONS =====
-function startTrial() {
-    // Reset for this trial
-    if (currentTrial === 1) {
-        tapTimesTrial1 = [];
-    } else if (currentTrial === 2) {
-        tapTimesTrial2 = [];
+        tapsTrial2.push(now);
     }
 
-    isRunning = true;
-    trialStartTime = performance.now();
-    tapButton.disabled = false;
-    stopButton.disabled = false;
-    startButton.disabled = true;
-    resultsBox.style.display = "none";
+    tapCount++;
+    tapCountDisplay.textContent = tapCount;
 
-    // Initialize timer display
-    timerDisplay.textContent = (TRIAL_DURATION_MS / 1000).toFixed(1);
+    if (tapCount >= REQUIRED_TAPS) endTrial();
+});
 
-    // Countdown update
-    if (countdownTimer) clearInterval(countdownTimer);
-    countdownTimer = setInterval(() => {
-        const elapsed = performance.now() - trialStartTime;
-        const remaining = Math.max(0, TRIAL_DURATION_MS - elapsed);
-        timerDisplay.textContent = (remaining / 1000).toFixed(1);
-        if (remaining <= 0) {
-            endTrial();
-        }
-    }, 100);
-
-    // Auto-stop after fixed duration
-    if (trialTimeout) clearTimeout(trialTimeout);
-    trialTimeout = setTimeout(() => {
-        endTrial();
-    }, TRIAL_DURATION_MS);
-}
-
+// End trial
 function endTrial() {
-    if (!isRunning) return;
-    isRunning = false;
-    tapButton.disabled = true;
-    stopButton.disabled = true;
-    startButton.disabled = false;
-
-    if (countdownTimer) clearInterval(countdownTimer);
-    if (trialTimeout) clearTimeout(trialTimeout);
-
-    timerDisplay.textContent = "0.0";
-
-    // Compute BPM for this trial
-    let bpm = null;
     if (currentTrial === 1) {
-        bpm = computeBPM(tapTimesTrial1);
-        if (bpm === null) {
-            alert("Not enough taps in Trial 1. Please repeat Trial 1.");
-            // allow repeating Trial 1
-            tapTimesTrial1 = [];
+        if (tapsTrial1.length < 4) {
+            alert("Not enough taps detected. Restart Trial 1.");
+            tapsTrial1 = [];
+            tapCount = 0;
+            tapCountDisplay.textContent = tapCount;
             return;
         }
-        trial1Result.textContent = "Trial 1 BPM: " + bpm;
-    } else if (currentTrial === 2) {
-        bpm = computeBPM(tapTimesTrial2);
-        if (bpm === null) {
-            alert("Not enough taps in Trial 2. Please repeat Trial 2.");
-            tapTimesTrial2 = [];
-            return;
-        }
-        trial2Result.textContent = "Trial 2 BPM: " + bpm;
-    }
 
-    // Move to next trial or finish
-    if (currentTrial === 1) {
+        alert("Trial 1 complete! Click OK to begin Trial 2.");
         currentTrial = 2;
-        trialLabel.textContent = "2";
-        alert("Trial 1 complete. Please start Trial 2 when ready.");
+        tapCount = 0;
+        trialNumDisplay.textContent = "2";
+        tapCountDisplay.textContent = "0";
+
     } else if (currentTrial === 2) {
-        currentTrial = 3; // mark as done
-        showFinalResults();
+        if (tapsTrial2.length < 4) {
+            alert("Not enough taps detected. Restart Trial 2.");
+            tapsTrial2 = [];
+            tapCount = 0;
+            tapCountDisplay.textContent = tapCount;
+            return;
+        }
+
+        // Compute final results
+        showResults();
+        tapButton.disabled = true;
     }
 }
 
-// ===== BPM CALCULATION =====
+// Compute BPM
 function computeBPM(timestamps) {
-    if (!timestamps || timestamps.length < 4) {
-        return null; // need at least a few taps
-    }
     let intervals = [];
     for (let i = 1; i < timestamps.length; i++) {
         intervals.push(timestamps[i] - timestamps[i-1]);
     }
-    const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length; // ms
-    const bpm = 60000 / avgInterval;
-    return Math.round(bpm);
+    const avgInterval = intervals.reduce((a,b)=>a+b) / intervals.length;
+    return Math.round(60000 / avgInterval);
 }
 
-function showFinalResults() {
-    const bpm1 = computeBPM(tapTimesTrial1);
-    const bpm2 = computeBPM(tapTimesTrial2);
-    let avg = null;
+// Display results
+function showResults() {
+    const bpm1 = computeBPM(tapsTrial1);
+    const bpm2 = computeBPM(tapsTrial2);
+    const avg = Math.round((bpm1 + bpm2) / 2);
 
-    if (bpm1 !== null && bpm2 !== null) {
-        avg = Math.round((bpm1 + bpm2) / 2);
-    }
+    document.getElementById("trial1Out").textContent = `Trial 1 BPM: ${bpm1}`;
+    document.getElementById("trial2Out").textContent = `Trial 2 BPM: ${bpm2}`;
+    document.getElementById("avgOut").textContent = `Average BPM (use this): ${avg}`;
 
     resultsBox.style.display = "block";
-    trial1Result.textContent = "Trial 1 BPM: " + (bpm1 !== null ? bpm1 : "N/A");
-    trial2Result.textContent = "Trial 2 BPM: " + (bpm2 !== null ? bpm2 : "N/A");
-    if (avg !== null) {
-        averageResult.textContent = "Average BPM (use this for the form): " + avg;
-    } else {
-        averageResult.textContent = "Average BPM: N/A (one or both trials invalid)";
-    }
 }
 </script>
 
