@@ -1,52 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta charset="UTF-8">
-<title>SMT Counter – Fixed Taps</title>
-    
-<style>
-html, body {
-    touch-action: manipulation;
-    -ms-touch-action: manipulation;
-}
 
-#tapButton {
-    touch-action: manipulation;
-    user-select: none;
-    -webkit-user-select: none;
-    -ms-user-select: none;
-}
-body {
+<!-- Prevent zoom & scaling -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>SMT Counter – Fixed Taps</title>
+
+<style>
+/* Global mobile tap behavior */
+html, body {
     font-family: Arial, sans-serif;
     background: #eef4ff;
     padding: 25px;
     text-align: center;
+
+    touch-action: manipulation;
+    -ms-touch-action: manipulation;
+    overscroll-behavior: none;
 }
 
+/* Headings */
 h1 {
     color: #163f9a;
 }
 
-#tapButton {
-    background: #4677ff;
-    color: white;
-    border: none;
-    padding: 30px 70px;
-    font-size: 26px;
-    border-radius: 14px;
-    margin-top: 40px;
-    cursor: pointer;
-}
-#tapButton:active {
-    background: #6d90ff;
-}
-
+/* Instructions */
 #instructions {
     max-width: 700px;
     margin: 0 auto;
 }
 
+/* Trial info */
 #trialInfo {
     font-size: 20px;
     margin-top: 20px;
@@ -59,6 +45,29 @@ h1 {
     color: #111;
 }
 
+/* Tap Button (critical for mobile) */
+#tapButton {
+    background: #4677ff;
+    color: white;
+    border: none;
+    padding: 30px 70px;
+    font-size: 26px;
+    border-radius: 14px;
+    margin-top: 40px;
+    cursor: pointer;
+
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+#tapButton:active {
+    background: #6d90ff;
+}
+
+/* Results box */
 #resultsBox {
     margin-top: 40px;
     padding: 20px;
@@ -94,6 +103,29 @@ h1 {
 </div>
 
 <script>
+/* ===============================
+   MOBILE ZOOM & GESTURE BLOCKERS
+   =============================== */
+
+// Prevent double-tap zoom
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function (event) {
+    const now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+    }
+    lastTouchEnd = now;
+}, { passive: false });
+
+// Prevent iOS gesture zoom
+document.addEventListener('gesturestart', function (e) {
+    e.preventDefault();
+});
+
+/* ===============================
+   SMT LOGIC
+   =============================== */
+
 const REQUIRED_TAPS = 20;
 
 let currentTrial = 1;
@@ -107,9 +139,9 @@ const tapCountDisplay = document.getElementById("tapCount");
 const trialNumDisplay = document.getElementById("trialNum");
 const resultsBox = document.getElementById("resultsBox");
 
-// Handle tap
+// Handle tap (FAST + ACCURATE)
 tapButton.addEventListener("pointerdown", (e) => {
-    e.preventDefault(); // stops zoom + ghost clicks
+    e.preventDefault(); // critical to stop zoom/ghost clicks
 
     const now = performance.now();
 
@@ -151,7 +183,6 @@ function endTrial() {
             return;
         }
 
-        // Compute final results
         showResults();
         tapButton.disabled = true;
     }
@@ -161,9 +192,9 @@ function endTrial() {
 function computeBPM(timestamps) {
     let intervals = [];
     for (let i = 1; i < timestamps.length; i++) {
-        intervals.push(timestamps[i] - timestamps[i-1]);
+        intervals.push(timestamps[i] - timestamps[i - 1]);
     }
-    const avgInterval = intervals.reduce((a,b)=>a+b) / intervals.length;
+    const avgInterval = intervals.reduce((a, b) => a + b) / intervals.length;
     return Math.round(60000 / avgInterval);
 }
 
