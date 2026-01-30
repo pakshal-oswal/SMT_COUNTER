@@ -4,9 +4,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta charset="UTF-8">
 <title>SMT Counter – Fixed Taps</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    
 <style>
+html, body {
+    touch-action: manipulation;
+    -ms-touch-action: manipulation;
+}
+
+#tapButton {
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}
 body {
     font-family: Arial, sans-serif;
     background: #eef4ff;
@@ -98,7 +108,9 @@ const trialNumDisplay = document.getElementById("trialNum");
 const resultsBox = document.getElementById("resultsBox");
 
 // Handle tap
-tapButton.addEventListener("click", () => {
+tapButton.addEventListener("pointerdown", (e) => {
+    e.preventDefault(); // stops zoom + ghost clicks
+
     const now = performance.now();
 
     if (currentTrial === 1) {
